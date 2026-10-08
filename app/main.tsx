@@ -29,42 +29,64 @@ const main = () => {
     return (
         <div className='bg-[#efeff1] p-10'>
             {/* T-shirt section */}
-            <div className='mt-20 text-center items-center mx-auto'>
-                <span className='relative inline-block before:absolute before:-inset-1 before:block before:-skew-y-3 before:bg-pink-500 p-2'>
-                    <span className='relative text-white text-2xl dark:text-gray-950'>SHOP NOW</span>
+            <div className='mt-20 text-center items-center mx-auto max-w-7xl px-4'>
+                {/* Section Header */}
+                <span className='relative inline-block before:absolute before:-inset-1 before:block before:-skew-y-3 before:bg-pink-500 before:rounded-lg p-2 shadow-md'>
+                    <span className='relative text-white font-extrabold tracking-wider text-2xl dark:text-gray-950'>SHOP NOW</span>
                 </span>
-                <div className='flex flex-col justify-center items-center md:flex-row gap-10 mt-10 p-5 mx-auto'>
-                    <Link href={`/products/maleTshirt/${maleTshirt[11].id}`} className='group inline-block'>
-                        <img src="/pictures/maleT-shirt/download (9).jpg" alt="" className='w-90 h-90' />
-                        <div className='text-start mt-5'>
-                            <span className='font-mono tracking-tighter group-hover:underline'>4 star T-shirt</span>
-                            <p className='font-bold tracking-tighter mt-3'>₦ 30.000</p>
+
+                {/* Product Grid */}
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-12 mx-auto'>
+
+                    {/* Product 1 */}
+                    <Link href={`/products/maleTshirt/${maleTshirt[11].id}`} className='group flex flex-col bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left'>
+                        <div className='overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800'>
+                            <img src="/pictures/maleT-shirt/download (9).jpg" alt="4 star T-shirt" className='w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500' />
+                        </div>
+                        <div className='mt-4 flex flex-col flex-grow justify-between'>
+                            <span className='font-mono text-sm tracking-tighter text-gray-700 dark:text-gray-300 group-hover:underline'>4 star T-shirt</span>
+                            <p className='font-bold text-lg tracking-tight mt-2 text-pink-600 dark:text-pink-400'>₦ 30,000</p>
                         </div>
                     </Link>
-                    <Link href={`/products/maleTshirt/${maleTshirt[9].id}`} className='group inline-block'>
-                        <img src="/pictures/maleT-shirt/download (7).jpg" alt="" className='w-90 h-90' />
-                        <div className='text-start mt-5'>
-                            <span className='font-mono tracking-tighter group-hover:underline'>Plain T-shirt</span>
-                            <p className='font-bold tracking-tighter mt-3'>₦ 26.000</p>
+
+                    {/* Product 2 */}
+                    <Link href={`/products/maleTshirt/${maleTshirt[9].id}`} className='group flex flex-col bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left'>
+                        <div className='overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800'>
+                            <img src="/pictures/maleT-shirt/download (7).jpg" alt="Plain T-shirt" className='w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500' />
+                        </div>
+                        <div className='mt-4 flex flex-col flex-grow justify-between'>
+                            <span className='font-mono text-sm tracking-tighter text-gray-700 dark:text-gray-300 group-hover:underline'>Plain T-shirt</span>
+                            <p className='font-bold text-lg tracking-tight mt-2 text-pink-600 dark:text-pink-400'>₦ 26,000</p>
                         </div>
                     </Link>
-                    <Link href={`/products/maleTshirt/${maleTshirt[13].id}`} className='group inline-block'>
-                        <img src="/pictures/maleT-shirt/PADOLA Men's T Shirt Cotton Short Sleeve Vintage Washed Oversized Streetwear.jpg" alt="" className='w-90 h-90' />
-                        <div className='text-start mt-5'>
-                            <span className='font-mono tracking-tighter group-hover:underline'>Plain T-shirt</span>
-                            <p className='font-bold tracking-tighter mt-3'>₦ 26.000</p>
+
+                    {/* Product 3 */}
+                    <Link href={`/products/maleTshirt/${maleTshirt[13].id}`} className='group flex flex-col bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left'>
+                        <div className='overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800'>
+                            <img src="/pictures/maleT-shirt/PADOLA Men's T Shirt Cotton Short Sleeve Vintage Washed Oversized Streetwear.jpg" alt="Plain T-shirt" className='w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500' />
+                        </div>
+                        <div className='mt-4 flex flex-col flex-grow justify-between'>
+                            <span className='font-mono text-sm tracking-tighter text-gray-700 dark:text-gray-300 group-hover:underline'>Plain T-shirt</span>
+                            <p className='font-bold text-lg tracking-tight mt-2 text-pink-600 dark:text-pink-400'>₦ 26,000</p>
                         </div>
                     </Link>
-                    <Link href={`/products/maleTshirt/${maleTshirt[15].id}`} className='group inline-block'>
-                        <img src="/pictures/maleT-shirt/Manfinity EMRG Men's Summer Slogan Print Distressed Crew Neck Short Sleeve Casual T-Shirt Green Graphic Tees Distressed TshirtI discovered amazing products on SHEIN_com, come check them out!.jpg" alt="" className='w-90 h-90' />
-                        <div className='text-start mt-5'>
-                            <span className='font-mono tracking-tighter group-hover:underline'>Dare to be different T-shirt</span>
-                            <p className='font-bold tracking-tighter mt-3'>₦ 30.000</p>
+
+                    {/* Product 4 */}
+                    <Link href={`/products/maleTshirt/${maleTshirt[15].id}`} className='group flex flex-col bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left'>
+                        <div className='overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800'>
+                            <img src="/pictures/maleT-shirt/Manfinity EMRG Men's Summer Slogan Print Distressed Crew Neck Short Sleeve Casual T-Shirt Green Graphic Tees Distressed TshirtI discovered amazing products on SHEIN_com, come check them out!.jpg" alt="Dare to be different T-shirt" className='w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500' />
+                        </div>
+                        <div className='mt-4 flex flex-col flex-grow justify-between'>
+                            <span className='font-mono text-sm tracking-tighter text-gray-700 dark:text-gray-300 group-hover:underline'>Dare to be different T-shirt</span>
+                            <p className='font-bold text-lg tracking-tight mt-2 text-pink-600 dark:text-pink-400'>₦ 30,000</p>
                         </div>
                     </Link>
+
                 </div>
-                <div className='mt-10'>
-                    <Link href={"/sub-pages/tshirt"} className='border-3 p-3 px-5'>
+
+                {/* Load More Button */}
+                <div className='mt-12'>
+                    <Link href={"/sub-pages/tshirt"} className='inline-block border-2 border-gray-900 dark:border-white text-gray-900 dark:text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-950 shadow-sm'>
                         LOAD MORE
                     </Link>
                 </div>
@@ -172,22 +194,76 @@ const main = () => {
 
                 </div>
             </div>
-            <div className='mt-30 mx-auto p-10'>
-                <div className='text-center'>
-                    <span className='relative inline-block before:absolute before:-inset-1 before:block before:-skew-y-3 before:bg-pink-500 p-2'>
-                        <span className='relative text-white dark:text-gray-950 text-2xl'>FEATURED PRODUCTS</span>
+            <div className='mt-16 md:mt-24 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+                {/* Section Header */}
+                <div className='text-center mb-10'>
+                    <span className='relative inline-block before:absolute before:-inset-1 before:block before:-skew-y-3 before:bg-pink-500 p-2 shadow-sm'>
+                        <span className='relative text-white dark:text-gray-950 text-xl md:text-2xl font-bold tracking-wider'>
+                            FEATURED PRODUCTS
+                        </span>
                     </span>
                 </div>
-                <div className='flex flex-col md:flex-row p-10 items-center justify-center gap-10'>
-                    <Link href={`/products/caps/${caps[5].id}`}>
-                        <img src="/pictures/caps/download (3).jpg" alt="" />
+
+                {/* Responsive Container: 2 columns on mobile/tablet, full flex/3-column row on laptop/desktop */}
+                <div className='grid grid-cols-2 md:flex md:flex-row items-center justify-center gap-4 md:gap-8'>
+
+                    {/* Product Card 1 */}
+                    <Link
+                        href={`/products/caps/${caps[5].id}`}
+                        className='group block w-full md:w-80 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 md:p-4 shadow-md hover:shadow-2xl hover:-translate-y-2 transition-all duration-300'
+                    >
+                        <div className='overflow-hidden rounded-xl aspect-square bg-gray-100 dark:bg-gray-800 mb-3'>
+                            <img
+                                src="/pictures/caps/download (3).jpg"
+                                alt="Featured Cap 1"
+                                className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                            />
+                        </div>
+                        <div className='text-center py-1'>
+                            <span className='text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 group-hover:text-pink-500 transition-colors'>
+                                View Product
+                            </span>
+                        </div>
                     </Link>
-                    <Link href={`/products/caps/${caps[8].id}`}>
-                        <img src="/pictures/caps/Shein code - CSZ8P9K.jpg" alt="" />
+
+                    {/* Product Card 2 */}
+                    <Link
+                        href={`/products/caps/${caps[8].id}`}
+                        className='group block w-full md:w-80 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 md:p-4 shadow-md hover:shadow-2xl hover:-translate-y-2 transition-all duration-300'
+                    >
+                        <div className='overflow-hidden rounded-xl aspect-square bg-gray-100 dark:bg-gray-800 mb-3'>
+                            <img
+                                src="/pictures/caps/Shein code - CSZ8P9K.jpg"
+                                alt="Featured Cap 2"
+                                className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                            />
+                        </div>
+                        <div className='text-center py-1'>
+                            <span className='text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 group-hover:text-pink-500 transition-colors'>
+                                View Product
+                            </span>
+                        </div>
                     </Link>
-                    <Link href={`/products/caps/${caps[9].id}`}>
-                        <img src="/pictures/caps/Street Letter Embroidered Baseball Cap.jpg" alt="" />
+
+                    {/* Product Card 3 (Takes full width or spans nicely on larger screens if needed) */}
+                    <Link
+                        href={`/products/caps/${caps[9].id}`}
+                        className='group block col-span-2 sm:col-span-1 w-full md:w-80 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 md:p-4 shadow-md hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 mx-auto sm:max-w-xs md:max-w-none'
+                    >
+                        <div className='overflow-hidden rounded-xl aspect-square bg-gray-100 dark:bg-gray-800 mb-3'>
+                            <img
+                                src="/pictures/caps/Street Letter Embroidered Baseball Cap.jpg"
+                                alt="Featured Cap 3"
+                                className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                            />
+                        </div>
+                        <div className='text-center py-1'>
+                            <span className='text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 group-hover:text-pink-500 transition-colors'>
+                                View Product
+                            </span>
+                        </div>
                     </Link>
+
                 </div>
             </div>
             {
