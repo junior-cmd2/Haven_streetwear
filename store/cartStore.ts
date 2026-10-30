@@ -1,85 +1,110 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { getProduct, type Product } from "@/lib/data/products";
+import { MAX_CART_QUANTITY } from "@/lib/checkout";
 
-type cartProduct = {
-    id: number;
-    image: string;
-    name: string;
-    price: number | string;
-    description: string
-    quantity: number
-    category: string;
+export type CartItem = {
+  key: string;
+  id: number;
+  category: Product["category"];
+  name: string;
+  price: number;
+  image: string;
+  size: string;
+  quantity: number;
+};
+
+type CartStore = {
+  items: CartItem[];
+  addItem: (product: Product, size: string, quantity?: number) => void;
+  removeItem: (key: string) => void;
+  updateQuantity: (key: string, quantity: number) => void;
+  clearCart: () => void;
+};
+
+export function cartItemKey(item: Pick<CartItem, "category" | "id" | "size">): string {
+  return `${item.category}:${item.id}:${item.size}`;
 }
 
-type cartStore = {
-    cartItem: cartProduct[]
-    cartCount: number;
-    addToCart: (product: Omit<cartProduct, "quantity">) => void;
-    removeFromCart: (productId: number, category: string) => void;
-    updateQuantity: (productId: number, quantity: number) => void
-    clearCart: () => void;
-    cartTotal: () => number
+/**
+ * Always use the current catalog price. The stored price is only a fallback
+ * for products that have since been removed from the catalog.
+ */
+export function getCartItemPrice(
+  item: Pick<CartItem, "category" | "id" | "price">,
+): number {
+  return getProduct(item.category, item.id)?.price ?? item.price;
 }
 
-export const usecartStore = create<cartStore>()(
-    persist((set, get) => ({
-        cartItem: [],
-        cartCount: 0,
+function clampQuantity(quantity: number): number {
+  return Math.min(MAX_CART_QUANTITY, Math.max(1, Math.floor(quantity)));
+}
 
-        addToCart: (product) => {
-            set((state) => {
-                const existing = state.cartItem.find((item) => item.id === product.id)
-                let updatedItems: cartProduct[];
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set) => ({
+      items: [],
 
-                if (existing) {
-                    updatedItems = state.cartItem.map((item) => item.id === product.id && item.category === product.category ? { ...item, quantity: item.quantity + 1 } : item)
-                } else {
-                    updatedItems = [...state.cartItem, { ...product, quantity: 1 }]
-                }
+      addItem: (product, size, quantity = 1) => {
+        const resolvedSize = product.sizes.includes(size) ? size : product.sizes[0] ?? "One size";
+        const key = cartItemKey({ category: product.category, id: product.id, size: resolvedSize });
 
-                const newCount = updatedItems.reduce((sum, items) => sum + items.quantity, 0)
+        set((state) => {
+          const existing = state.items.find((item) => item.key === key);
 
-                return { cartItem: updatedItems, cartCount: newCount }
-            })
-        },
+          if (existing) {
+            return {
+              items: state.items.map((item) =>
+                item.key === key
+                  ? { ...item, quantity: clampQuantity(item.quantity + quantity) }
+                  : item,
+              ),
+            };
+          }
 
-        removeFromCart: (productId, category) => {
-            set((state) => {
-                console.log("Trying to remove:", productId, category);
-                console.log("Current cart:", state.cartItem);
-                const updatedItems = state.cartItem.filter((item) => item.id !== productId || item.category !== category)
-                const newCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
+          return {
+            items: [
+              ...state.items,
+              {
+                key,
+                id: product.id,
+                category: product.category,
+                name: product.name,
+                price: product.price,
+                image: product.image,
+                size: resolvedSize,
+                quantity: clampQuantity(quantity),
+              },
+            ],
+          };
+        });
+      },
 
-                return { cartItem: updatedItems, cartCount: newCount }
-            })
-        },
+      removeItem: (key) => {
+        set((state) => ({ items: state.items.filter((item) => item.key !== key) }));
+      },
 
-        updateQuantity: (productId, quantity) => {
-            set((state) => {
-                
-                let updatedItems: cartProduct[];
-                if (quantity <= 0) {
-                    updatedItems = state.cartItem.filter((item) => item.id !== productId);
-                } else {
-                    updatedItems = state.cartItem.map((item) => item.id === productId ? { ...item, quantity } : item)
-                }
-                const newCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      updateQuantity: (key, quantity) => {
+        if (quantity <= 0) {
+          set((state) => ({ items: state.items.filter((item) => item.key !== key) }));
+          return;
+        }
 
-                return { cartItem: updatedItems, cartCount: newCount }
-            })
-        },
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.key === key ? { ...item, quantity: clampQuantity(quantity) } : item,
+          ),
+        }));
+      },
 
-        clearCart: () => {
-            set({ cartItem: [], cartCount: 0 })
-        },
+      clearCart: () => set({ items: [] }),
+    }),
+    { name: "haven-cart-v2" },
+  ),
+);
 
-        cartTotal: () => {
-            const { cartItem } = get();
-            return cartItem.reduce(
-                (sum, item) => sum + Number(item.price) * item.quantity, 0
-            )
-        },
+export const selectCartCount = (state: CartStore): number =>
+  state.items.reduce((total, item) => total + item.quantity, 0);
 
-
-    }), { name: "cart-storage" })
-)
+export const selectSubtotal = (state: CartStore): number =>
+  state.items.reduce((total, item) => total + getCartItemPrice(item) * item.quantity, 0);

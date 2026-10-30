@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "public/pictures/page.ts", "public/pictures/aigenerated/aigenerated.js"  ],
-  "exclude": ["node_modules"]
+  ],
+  "exclude": ["node_modules", ".next", "out"]
 }

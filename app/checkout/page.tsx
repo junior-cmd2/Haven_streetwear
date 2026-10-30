@@ -1,346 +1,667 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { useState } from 'react'
-import { ToastContainer, toast } from 'react-toastify';
-import PaystackPop from "@paystack/inline-js";
-import "react-toastify/dist/ReactToastify.css";
-import { usecartStore } from '@/store/cartStore'
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { toast } from "react-toastify";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  CreditCard,
+  Loader2,
+  Lock,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { inputClass, labelClass, FieldError } from "@/components/ui/form";
+import { getOrderTotal, getShippingFee } from "@/lib/checkout";
+import type { CartItem } from "@/store/cartStore";
+import {
+  getCartItemPrice,
+  selectCartCount,
+  selectSubtotal,
+  useCartStore,
+} from "@/store/cartStore";
+import { formatPrice } from "@/lib/format";
+import { nigerianStates, siteConfig } from "@/lib/site";
+import { cn } from "@/lib/utils";
+import { useHasMounted } from "@/lib/use-has-mounted";
 
-const page = () => {
-    const [email, setEmail] = useState("")
-    const [firstName, setFirstName] = useState("")
-    const [lastName, setLastName] = useState("")
-    const [amount, setAmount] = useState("")
-    const [phoneNumber, setPhoneNumber] = useState("")
-    const [streetAddress, setStreetAddress] = useState('');
-    const [country, setCountry] = useState('');
-    const [stateProvince, setStateProvince] = useState('');
-    const [city, setCity] = useState('');
-    const [zipCode, setZipCode] = useState('');
-    const { cartItem, cartTotal, cartCount } = usecartStore()
-    const publickey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-    const total = cartTotal()
+type FormState = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  notes: string;
+};
 
-    const handleSubmit = () => {
-        if (!publickey) {
-            toast.error("paystack public key not set");
-            return;
-        }
-        const paystack = new PaystackPop();
-        paystack.newTransaction({
-            email,
-            amount: total * 100,
-            key: publickey,
-            metadata: {
-                custom_fields: [
-                    {
-                        display_name: "First Name",
-                        variable_name: "first_name",
-                        value: firstName,
-                    },
-                    {
-                        display_name: "Phone Number",
-                        variable_name: "phone_number",
-                        value: phoneNumber,
-                    },
-                ],
-            },
-            onSuccess: (transaction) => {
-                toast.success("Payment confirmed ✅");
-                console.log(transaction);
-            },
-            onCancel: () => {
-                toast.error("payment cancelled ")
-            },
-            onError: (error) => {
-                toast.error("Something went wrong with the payment ❌");
-                console.log(error);
-            },
-        })
-    }
+type FormErrors = Partial<Record<keyof FormState, string>>;
 
-    
+type CompletedOrder = {
+  reference: string;
+  total: number;
+  email: string;
+  count: number;
+};
 
-    return (
-        <div>
-            <div className='mt-10 p-10 flex flex-1 mx-auto'>
-                <div className='grid grid-cols-1 md:grid-cols-2'>
+const initialForm: FormState = {
+  email: "",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  address: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  notes: "",
+};
 
-                    <div className='border-r p-10 text-[20px] text-zinc-500 md:pl-50'>
-                        <div className='flex w-full'>
-                            <form action="">
-                                <div className='relative flex flex-col'>
-                                    <input type="email" placeholder='' className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all' required value={email} onChange={(e) => setEmail(e.target.value)} />
-                                    <label htmlFor='Email' className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none' >Email Address</label>
-                                </div>
-                                <p className='text-red-300 mt-2'>We would send you order confirmation here.</p>
-                            </form>
-                        </div>
-                        <hr className='mt-5' />
-                        <div className='mt-5'>
-                            <div className='w-full'>
-                                <h1 className='font-serif font-bold text-[20px] text-black underline underline-offset-8 flex'>Shipping Address</h1>
-                            </div>
-
-                            <div className='mt-3'>
-                                <div className='flex flex-col gap-5'>
-                                    <form className='flex flex-col w-full max-w-lg mx-auto gap-4 p-4'>
-
-                                        {/* First Name */}
-                                        <div className='relative flex flex-col'>
-                                            <input
-                                                id='firstName'
-                                                type='text'
-                                                required
-                                                placeholder=' '
-                                                className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all'
-                                                value={firstName}
-                                                onChange={(e) => setFirstName(e.target.value)}
-                                            />
-                                            <label
-                                                htmlFor='firstName'
-                                                className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none'
-                                            >
-                                                First Name
-                                            </label>
-                                        </div>
-
-                                        {/* Last Name */}
-                                        <div className='relative flex flex-col'>
-                                            <input
-                                                id='lastName'
-                                                type='text'
-                                                required
-                                                placeholder=' '
-                                                className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all'
-                                                value={lastName}
-                                                onChange={(e) => setLastName(e.target.value)}
-                                            />
-                                            <label
-                                                htmlFor='lastName'
-                                                className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none'
-                                            >
-                                                Last Name
-                                            </label>
-                                        </div>
-
-                                        <h1 className='text-zinc-500 font-medium mt-2'>
-                                            Street Address <span className='text-red-400 font-bold'>*</span>
-                                        </h1>
-
-                                        {/* Street Address Line 1 */}
-                                        <div className='relative flex flex-col'>
-                                            <input
-                                                id='streetAddress'
-                                                type='text'
-                                                required
-                                                placeholder=' '
-                                                className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all'
-                                                value={streetAddress}
-                                                onChange={(e) => setStreetAddress(e.target.value)}
-                                            />
-                                            <label
-                                                htmlFor='streetAddress'
-                                                className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none'
-                                            >
-                                                Street Address: Line 1 <span className='text-red-400'>*</span>
-                                            </label>
-                                        </div>
-
-                                        {/* Country */}
-                                        <div className='relative flex flex-col'>
-                                            <input
-                                                id='country'
-                                                type='text'
-                                                required
-                                                placeholder=' '
-                                                className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all'
-                                                value={country}
-                                                onChange={(e) => setCountry(e.target.value)}
-                                            />
-                                            <label
-                                                htmlFor='country'
-                                                className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none'
-                                            >
-                                                Country <span className='text-red-400'>*</span>
-                                            </label>
-                                        </div>
-
-                                        {/* State/Province */}
-                                        <div className='relative flex flex-col'>
-                                            <input
-                                                id='stateProvince'
-                                                type='text'
-                                                required
-                                                placeholder=' '
-                                                className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all'
-                                                value={stateProvince}
-                                                onChange={(e) => setStateProvince(e.target.value)}
-                                            />
-                                            <label
-                                                htmlFor='stateProvince'
-                                                className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none'
-                                            >
-                                                State/Province <span className='text-red-400'>*</span>
-                                            </label>
-                                        </div>
-
-                                        {/* City */}
-                                        <div className='relative flex flex-col'>
-                                            <input
-                                                id='city'
-                                                type='text'
-                                                required
-                                                placeholder=' '
-                                                className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all'
-                                                value={city}
-                                                onChange={(e) => setCity(e.target.value)}
-                                            />
-                                            <label
-                                                htmlFor='city'
-                                                className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none'
-                                            >
-                                                City <span className='text-red-400'>*</span>
-                                            </label>
-                                        </div>
-
-                                        {/* Zip/Postal Code */}
-                                        <div className='relative flex flex-col'>
-                                            <input id='zipCode' type='number' required readOnly placeholder=' ' className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all' value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
-                                            <label
-                                                htmlFor='zipCode'
-                                                className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none'
-                                            >
-                                                Zip/Postal Code <span className='text-red-400'>*</span>
-                                            </label>
-                                        </div>
-
-                                        {/* Phone Number */}
-                                        <div className='relative flex flex-col'>
-                                            <input
-                                                id='phoneNumber'
-                                                type='number'
-                                                required
-                                                readOnly
-                                                placeholder=' '
-                                                className='peer w-full border border-zinc-300 rounded p-3 pt-5 text-sm focus:border-black focus:outline-none transition-all'
-                                                value={phoneNumber}
-                                                onChange={(e) => setPhoneNumber(e.target.value)}
-                                            />
-                                            <label
-                                                htmlFor='phoneNumber'
-                                                className='absolute left-3 top-3 text-xs text-zinc-400 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-black pointer-events-none'
-                                            >
-                                                Phone Number <span className='text-red-400'>*</span>
-                                            </label>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <hr className='mt-10 w-full' />
-
-                            <div className='mt-10'>
-                                <h1 className='font-bold font-serif flex'>Payment method</h1>
-                                <p className='font-light flex items-start'>All transaction are secure and encrypted.</p>
-
-
-                                <div className="border rounded-2xl bg-white overflow-hidden font-sans shadow-sm mt-5">
-
-                                    {/* <!-- Top Row: Gateway Name and Accepted Payment Icons --> */}
-                                    <div className="flex items-center justify-between px-5 py-4 border-2 border-blue-600 ">
-                                        <label className="flex items-center gap-3 cursor-pointer">
-                                            <input type="radio" name="payment_gateway" value="paystack" checked className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
-                                            <span className="font-semibold text-gray-900">Paystack</span>
-                                        </label>
-
-                                        {/* <!-- Icons & Counter Badge --> */}
-                                        <div className="flex items-center gap-2">
-                                            {/* <!-- Mastercard Icon Example --> */}
-                                            <img src="/mastercard.svg" alt="Mastercard" className="h-6 object-contain" />
-                                            {/* <!-- Visa Icon Example --> */}
-                                            <img src="/visa.svg" alt="Visa" className="h-6 object-contain" />
-                                            {/* <!-- Local Card / Alternative Icon Example (e.g., paypal/Mtn) --> */}
-                                            <img src="/paypal.svg" alt="Verve" className="h-6 object-contain" />
-                                            {/* <!-- "+5" More Badge --> */}
-                                            <span className="bg-gray-100 text-gray-700 text-xs font-semibold px-1.5 py-1 rounded border border-gray-200">+5</span>
-                                        </div>
-                                    </div>
-
-                                    {/* <!-- Bottom Row: Redirect Information Box --> */}
-                                    <div className="bg-gray-50 border-t border-gray-200 px-5 py-3.5 text-center">
-                                        <p className="text-sm text-gray-800 m-0">You'll be redirected to Paystack to complete your purchase</p>
-                                    </div>
-                                </div>
-                                <div className='flex w-full mt-10 border'>
-                                    <button className='p-4 px-4 font-bold bg-gray-500 text-white cursor-pointer flex w-full text-center items-center justify-center' onClick={handleSubmit} type='button'>Place Order</button>
-                                </div>
-                            </div>
-                        </div>
-
-
-                    </div>
-
-                    <div className='md:pl-20w-full max-w-md mx-auto lg:max-w-none p-4 sm:p-6 lg:p-8 border border-zinc-200 rounded-xl bg-gray-50 space-y-6 h-fit sticky top-24 shadow-sm'>
-
-                        {/* Title */}
-                        <h2 className='text-lg font-semibold text-zinc-800 border-b border-zinc-200 pb-4'>
-                            Order Summary
-                        </h2>
-
-                        {/* Cart Items List */}
-                        <div className='space-y-4 max-h-72 overflow-y-auto pr-1'>
-                            {cartItem.map((product) => (
-                                <div key={product.id} className='flex items-center justify-between gap-4'>
-                                    <div className='flex items-center gap-3 min-w-0'>
-                                        <img
-                                            src={product.image}
-                                            alt={product.name}
-                                            className='w-12 h-12 object-contain rounded-lg border border-zinc-200 bg-white flex-shrink-0 p-1'
-                                        />
-                                        <div className='min-w-0'>
-                                            <p className='font-mono font-light text-sm text-zinc-800 truncate'>{product.name}</p>
-                                            <p className='text-gray-500 text-xs'>Quantity: {product.quantity}</p>
-                                        </div>
-                                    </div>
-                                    <div className='font-medium text-sm text-zinc-900 whitespace-nowrap'>
-                                        ₦{Math.round(product.price)}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Subtotal & Shipping Breakdown */}
-                        <div className='border-t border-zinc-200 pt-4 space-y-3 text-sm text-zinc-600'>
-                            <div className='flex justify-between items-center'>
-                                <p>Subtotal ({cartCount} items)</p>
-                                <p className='font-medium text-zinc-900'>₦{total}</p>
-                            </div>
-
-                            <div className='flex justify-between items-center'>
-                                <p>Shipping fee</p>
-                                <p className='text-xs text-zinc-500 italic'>Depends on the location</p>
-                            </div>
-                        </div>
-
-                        {/* Final Total */}
-                        <div className='border-t border-zinc-200 pt-4 flex justify-between items-center'>
-                            <p className='font-bold text-lg sm:text-xl text-zinc-900'>Total</p>
-
-
-                            <p className='font-bold text-lg sm:text-xl text-zinc-900 flex items-baseline gap-1'>
-                                <span className='text-gray-400 font-light text-xs'>NGN</span>
-                                <span>₦{total}</span>
-                            </p>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-            <ToastContainer />
-        </div>
-    )
+function validate(form: FormState): FormErrors {
+  const errors: FormErrors = {};
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    errors.email = "Enter a valid email address.";
+  }
+  if (!form.firstName.trim()) errors.firstName = "First name is required.";
+  if (!form.lastName.trim()) errors.lastName = "Last name is required.";
+  if (!/^[0-9+\s()-]{7,20}$/.test(form.phone.trim())) {
+    errors.phone = "Enter a valid phone number.";
+  }
+  if (form.address.trim().length < 5) errors.address = "Enter your street address.";
+  if (!form.city.trim()) errors.city = "City is required.";
+  if (!form.state.trim()) errors.state = "Select your state.";
+  return errors;
 }
 
-export default page
+export default function CheckoutPage() {
+  const mounted = useHasMounted();
+  const items = useCartStore((state) => state.items);
+  const clearCart = useCartStore((state) => state.clearCart);
+  const cartCount = useCartStore(selectCartCount);
+  const subtotal = useCartStore(selectSubtotal);
+
+  const [form, setForm] = useState<FormState>(initialForm);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [status, setStatus] = useState<"idle" | "paying" | "verifying">("idle");
+  const [order, setOrder] = useState<CompletedOrder | null>(null);
+
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+  const shipping = getShippingFee(subtotal);
+  const total = getOrderTotal(subtotal);
+
+  const orderItems = useMemo(
+    () =>
+      items.map((item: CartItem) => ({
+        category: item.category,
+        id: item.id,
+        size: item.size,
+        quantity: item.quantity,
+      })),
+    [items],
+  );
+
+  function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
+    setErrors((current) => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }
+
+  async function verifyPayment(reference: string) {
+    setStatus("verifying");
+
+    try {
+      const response = await fetch("/api/orders/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reference,
+          items: orderItems,
+          customer: {
+            email: form.email.trim(),
+            firstName: form.firstName.trim(),
+            lastName: form.lastName.trim(),
+            phone: form.phone.trim(),
+          },
+          shipping: {
+            address: form.address.trim(),
+            city: form.city.trim(),
+            state: form.state,
+            postalCode: form.postalCode.trim(),
+            country: "Nigeria",
+            notes: form.notes.trim(),
+          },
+        }),
+      });
+
+      const data = (await response.json()) as {
+        verified?: boolean;
+        error?: string;
+        total?: number;
+      };
+
+      if (!response.ok || !data.verified) {
+        setStatus("idle");
+        toast.error(data.error ?? "We could not verify this payment. Please contact support.");
+        return;
+      }
+
+      setOrder({
+        reference,
+        total: data.total ?? total,
+        email: form.email.trim(),
+        count: cartCount,
+      });
+      clearCart();
+      setStatus("idle");
+      toast.success("Payment confirmed. Thank you!");
+    } catch {
+      setStatus("idle");
+      toast.error("Payment succeeded, but verification failed. Please contact support with your reference.");
+    }
+  }
+
+  async function onPlaceOrder(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (status !== "idle") return;
+
+    const nextErrors = validate(form);
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      toast.error("Please check the highlighted fields.");
+      return;
+    }
+
+    if (!publicKey) {
+      toast.error("Paystack is not configured. Add NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY to .env.local.");
+      return;
+    }
+
+    setStatus("paying");
+
+    try {
+      // Loaded on demand so the Paystack browser bundle never runs during SSR/prerender.
+      const { default: PaystackPop } = await import("@paystack/inline-js");
+      const paystack = new PaystackPop();
+
+      paystack.newTransaction({
+        key: publicKey,
+        email: form.email.trim(),
+        amount: Math.round(total * 100),
+        currency: "NGN",
+        metadata: {
+          custom_fields: [
+            {
+              display_name: "Customer name",
+              variable_name: "customer_name",
+              value: `${form.firstName} ${form.lastName}`.trim(),
+            },
+            {
+              display_name: "Phone number",
+              variable_name: "phone_number",
+              value: form.phone,
+            },
+            {
+              display_name: "Delivery address",
+              variable_name: "delivery_address",
+              value: `${form.address}, ${form.city}, ${form.state}`,
+            },
+          ],
+        },
+        onSuccess: (transaction) => {
+          void verifyPayment(transaction.reference);
+        },
+        onCancel: () => {
+          setStatus("idle");
+          toast.info("Payment cancelled.");
+        },
+        onError: (error) => {
+          setStatus("idle");
+          console.error(error);
+          toast.error("Something went wrong with the payment. Please try again.");
+        },
+      });
+    } catch (error) {
+      setStatus("idle");
+      console.error(error);
+      toast.error("We could not open the payment window. Please try again.");
+    }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="container-page py-12">
+        <div className="h-10 w-56 animate-pulse rounded-full bg-secondary" />
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="h-[32rem] animate-pulse rounded-2xl bg-secondary" />
+          <div className="h-96 animate-pulse rounded-2xl bg-secondary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (order) {
+    return (
+      <div className="container-page flex min-h-[70vh] flex-col items-center justify-center py-14 text-center">
+        <div className="flex size-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+          <CheckCircle2 className="size-10" />
+        </div>
+        <p className="mt-6 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+          Order confirmed
+        </p>
+        <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+          Thank you for your order<span className="text-accent">.</span>
+        </h1>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+          We&apos;ve sent a confirmation to <span className="font-semibold text-foreground">{order.email}</span>.
+          Keep the reference below — our team will use it if you need help.
+        </p>
+
+        <div className="mt-8 w-full max-w-md rounded-2xl border border-border bg-white p-6 text-left">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Reference</span>
+            <span className="font-mono text-xs font-semibold">{order.reference}</span>
+          </div>
+          <div className="mt-3 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Items</span>
+            <span className="font-semibold">{order.count}</span>
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+            <span className="font-semibold">Total paid</span>
+            <span className="font-black">{formatPrice(order.total)}</span>
+          </div>
+        </div>
+
+        <div className="mt-8 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
+          {[
+            { title: "Confirmed", copy: "Your payment is verified and your order is in." },
+            { title: "Packed", copy: "We pick and check your pieces within 24 hours." },
+            { title: "Delivered", copy: "Nationwide delivery in 1–5 working days." },
+          ].map((step, index) => (
+            <div key={step.title} className="rounded-2xl border border-border bg-white p-4">
+              <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                {index + 1}
+              </span>
+              <p className="mt-3 text-sm font-semibold">{step.title}</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.copy}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <ButtonLink href="/shop" size="lg">
+            Continue shopping
+            <ArrowRight className="size-4" />
+          </ButtonLink>
+          <ButtonLink href="/contact" variant="outline" size="lg">
+            Contact support
+          </ButtonLink>
+        </div>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="container-page flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
+        <h1 className="text-3xl font-black tracking-[-0.04em]">Nothing to check out.</h1>
+        <p className="mt-3 max-w-sm text-sm text-muted-foreground">
+          Your bag is empty. Add a piece or two and come back.
+        </p>
+        <ButtonLink href="/shop" size="lg" className="mt-7">
+          Shop the collection
+          <ArrowRight className="size-4" />
+        </ButtonLink>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container-page py-10 sm:py-14">
+      <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+            Secure checkout
+          </p>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+            Complete your order<span className="text-accent">.</span>
+          </h1>
+        </div>
+        <Link
+          href="/cart"
+          className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          Back to bag
+        </Link>
+      </div>
+
+      <form onSubmit={onPlaceOrder} className="mt-8 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:gap-10" noValidate>
+        <div className="space-y-8">
+          <section className="rounded-2xl border border-border bg-white p-5 sm:p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex size-8 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
+                1
+              </span>
+              <div>
+                <h2 className="text-lg font-black tracking-tight">Contact</h2>
+                <p className="text-xs text-muted-foreground">We&apos;ll send your receipt here.</p>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <label htmlFor="email" className={labelClass}>
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={form.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                className={cn(inputClass, errors.email && "border-red-500 focus:border-red-500")}
+                placeholder="you@example.com"
+                aria-invalid={Boolean(errors.email)}
+              />
+              <FieldError message={errors.email} />
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-white p-5 sm:p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex size-8 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
+                2
+              </span>
+              <div>
+                <h2 className="text-lg font-black tracking-tight">Delivery</h2>
+                <p className="text-xs text-muted-foreground">Nationwide delivery across Nigeria.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="firstName" className={labelClass}>
+                  First name
+                </label>
+                <input
+                  id="firstName"
+                  autoComplete="given-name"
+                  value={form.firstName}
+                  onChange={(event) => updateField("firstName", event.target.value)}
+                  className={cn(inputClass, errors.firstName && "border-red-500")}
+                  aria-invalid={Boolean(errors.firstName)}
+                />
+                <FieldError message={errors.firstName} />
+              </div>
+              <div>
+                <label htmlFor="lastName" className={labelClass}>
+                  Last name
+                </label>
+                <input
+                  id="lastName"
+                  autoComplete="family-name"
+                  value={form.lastName}
+                  onChange={(event) => updateField("lastName", event.target.value)}
+                  className={cn(inputClass, errors.lastName && "border-red-500")}
+                  aria-invalid={Boolean(errors.lastName)}
+                />
+                <FieldError message={errors.lastName} />
+              </div>
+
+              <div>
+                <label htmlFor="phone" className={labelClass}>
+                  Phone number
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  value={form.phone}
+                  onChange={(event) => updateField("phone", event.target.value)}
+                  className={cn(inputClass, errors.phone && "border-red-500")}
+                  placeholder="+234 800 000 0000"
+                  aria-invalid={Boolean(errors.phone)}
+                />
+                <FieldError message={errors.phone} />
+              </div>
+              <div>
+                <label htmlFor="postalCode" className={labelClass}>
+                  Postal code <span className="normal-case tracking-normal">(optional)</span>
+                </label>
+                <input
+                  id="postalCode"
+                  autoComplete="postal-code"
+                  value={form.postalCode}
+                  onChange={(event) => updateField("postalCode", event.target.value)}
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label htmlFor="address" className={labelClass}>
+                  Street address
+                </label>
+                <input
+                  id="address"
+                  autoComplete="street-address"
+                  value={form.address}
+                  onChange={(event) => updateField("address", event.target.value)}
+                  className={cn(inputClass, errors.address && "border-red-500")}
+                  placeholder="House number, street, area"
+                  aria-invalid={Boolean(errors.address)}
+                />
+                <FieldError message={errors.address} />
+              </div>
+
+              <div>
+                <label htmlFor="city" className={labelClass}>
+                  City
+                </label>
+                <input
+                  id="city"
+                  autoComplete="address-level2"
+                  value={form.city}
+                  onChange={(event) => updateField("city", event.target.value)}
+                  className={cn(inputClass, errors.city && "border-red-500")}
+                  aria-invalid={Boolean(errors.city)}
+                />
+                <FieldError message={errors.city} />
+              </div>
+              <div>
+                <label htmlFor="state" className={labelClass}>
+                  State
+                </label>
+                <select
+                  id="state"
+                  autoComplete="address-level1"
+                  value={form.state}
+                  onChange={(event) => updateField("state", event.target.value)}
+                  className={cn(inputClass, "appearance-none", errors.state && "border-red-500")}
+                  aria-invalid={Boolean(errors.state)}
+                >
+                  <option value="">Select state</option>
+                  {nigerianStates.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+                <FieldError message={errors.state} />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label htmlFor="notes" className={labelClass}>
+                  Delivery notes <span className="normal-case tracking-normal">(optional)</span>
+                </label>
+                <input
+                  id="notes"
+                  value={form.notes}
+                  onChange={(event) => updateField("notes", event.target.value)}
+                  className={inputClass}
+                  placeholder="Landmark, gate code or preferred delivery time"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-start gap-3 rounded-xl bg-secondary/60 p-4">
+              <Truck className="mt-0.5 size-4 shrink-0" />
+              <div className="text-xs">
+                <p className="font-semibold">Standard nationwide delivery</p>
+                <p className="mt-0.5 text-muted-foreground">
+                  {shipping === 0 ? "Free" : formatPrice(shipping)} · 1–5 working days
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-white p-5 sm:p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex size-8 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
+                3
+              </span>
+              <div>
+                <h2 className="text-lg font-black tracking-tight">Payment</h2>
+                <p className="text-xs text-muted-foreground">Secured by Paystack. Cards and bank transfer.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-xl border-2 border-foreground/80 bg-secondary/30 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="size-5" />
+                  <div>
+                    <p className="text-sm font-semibold">Paystack</p>
+                    <p className="text-[11px] text-muted-foreground">Visa · Mastercard · Verve · Bank transfer</p>
+                  </div>
+                </div>
+                <span className="flex size-5 items-center justify-center rounded-full border border-foreground bg-foreground text-background">
+                  <Check className="size-3" />
+                </span>
+              </div>
+            </div>
+
+            {!publicKey ? (
+              <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
+                Payment is not configured. Add <code>NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY</code> to your
+                environment to accept orders.
+              </p>
+            ) : null}
+
+            <Button type="submit" size="lg" className="mt-6 w-full" disabled={status !== "idle"}>
+              {status === "paying" ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Opening Paystack…
+                </>
+              ) : status === "verifying" ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Verifying payment…
+                </>
+              ) : (
+                <>
+                  <Lock className="size-4" />
+                  Pay {formatPrice(total)}
+                </>
+              )}
+            </Button>
+
+            <p className="mt-3 text-center text-[10px] leading-relaxed text-muted-foreground">
+              By placing this order you agree to our{" "}
+              <Link href="/policies#terms" className="underline underline-offset-2 hover:text-foreground">
+                terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/policies#returns" className="underline underline-offset-2 hover:text-foreground">
+                returns policy
+              </Link>
+              .
+            </p>
+          </section>
+        </div>
+
+        <aside className="h-fit rounded-2xl border border-border bg-white p-5 sm:p-6 lg:sticky lg:top-28">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black tracking-tight">Your order</h2>
+            <Link href="/cart" className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">
+              Edit bag
+            </Link>
+          </div>
+
+          <ul className="mt-5 max-h-80 space-y-4 overflow-y-auto pr-1">
+            {items.map((item) => (
+              <li key={item.key} className="flex gap-3">
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-[#eeebe5]">
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    sizes="64px"
+                    className="object-contain p-1.5"
+                  />
+                  <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-foreground text-[9px] font-bold text-background">
+                    {item.quantity}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{item.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Size: {item.size}</p>
+                  <p className="mt-1 text-xs font-semibold">{formatPrice(getCartItemPrice(item) * item.quantity)}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <dl className="mt-5 space-y-3 border-t border-border pt-5 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-muted-foreground">Subtotal ({cartCount})</dt>
+              <dd className="font-semibold">{formatPrice(subtotal)}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-muted-foreground">Delivery</dt>
+              <dd className="font-semibold">
+                {shipping === 0 ? <span className="text-emerald-700">Free</span> : formatPrice(shipping)}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between border-t border-border pt-3 text-base">
+              <dt className="font-semibold">Total</dt>
+              <dd className="font-black">{formatPrice(total)}</dd>
+            </div>
+          </dl>
+
+          <div className="mt-5 space-y-2 rounded-xl bg-secondary/60 p-4 text-[11px] text-muted-foreground">
+            <p className="flex items-center gap-2">
+              <ShieldCheck className="size-3.5 text-foreground" />
+              Secured by Paystack
+            </p>
+            <p className="flex items-center gap-2">
+              <Truck className="size-3.5 text-foreground" />
+              Delivery in 1–5 working days
+            </p>
+            <p className="flex items-center gap-2">
+              <Check className="size-3.5 text-foreground" />
+              7-day returns on unworn items
+            </p>
+          </div>
+
+          <p className="mt-4 text-center text-[10px] text-muted-foreground">
+            Need help?{" "}
+            <a href={`mailto:${siteConfig.email}`} className="underline underline-offset-2 hover:text-foreground">
+              {siteConfig.email}
+            </a>
+          </p>
+        </aside>
+      </form>
+    </div>
+  );
+}
